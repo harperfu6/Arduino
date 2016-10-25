@@ -29,7 +29,7 @@ void loop() {
     val[i] = analogRead(analogPins[i]) ; //アナログ0番ピンからセンサ値を読み込み
   }
   
-//          Serial.print( val[0], 4 );
+//        Serial.print( val[0], 4 );
 //        Serial.print( "\t" );
 //        Serial.print( val[1], 4 );
 //        Serial.print( "\t" );
@@ -67,8 +67,8 @@ void print_command(int sensor_index){
   Wire.beginTransmission(1);
   switch(sensor_index){
     case 1:
-      Wire.write("1");
-//      Serial.println("caplIn;");
+      Wire.write("1");      
+//      Serial.println("1111caplIn;");
       break;
     case 2:
       Wire.write("2");

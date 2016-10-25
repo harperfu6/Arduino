@@ -64,10 +64,10 @@ void setup() {
   // put your setup code here, to run once:
   Serial.begin(9600);
 //  mySerial.begin(38400);
-//  Wire.begin();
+  Wire.begin();
 //pinMode()
-pinMode(18, OUTPUT);
-pinMode(19, OUTPUT);
+//pinMode(18, OUTPUT);
+//pinMode(19, OUTPUT);
   delay(100);
 }
 
@@ -75,6 +75,8 @@ void loop() {
   // put your main code here, to run repeatedly:
   
     Serial.println();
+    Serial.print("ultra : ");
+    Serial.println(analogRead(0));
     
 //    //u_sonic
 //    int input = analogRead(u_sonicPinReceive);
@@ -97,29 +99,33 @@ void loop() {
 //      int pinch_state = 0;
       while(Wire.available()){
 
-//        char c = Wire.read();
+        unsigned char c = Wire.read();
         
-        char c = Wire.read();
-        Serial.print((int)c);
-        Serial.print(" ");
+//        char c = Wire.read();
+//        Serial.print((int)c);
+//        Serial.print(" ");
 //        
         if(data_index == 0){
           photoValue[0] = (int)c;
+          Serial.print("photo1: ");
           Serial.print(photoValue[0]);
           Serial.print(" ");
         }
         else if(data_index == 1){
           photoValue[1] = (int)c;
+          Serial.print("photo2: ");
           Serial.print(photoValue[1]);
           Serial.print(" ");
         }
         else if(data_index == 2){
           pinch_state = c;
+          Serial.print("State: ");
           Serial.print(pinch_state);
           Serial.print(" ");
         }
         data_index++;
       }
+      Serial.println("");
       
           switch (pinch_state){
             case 'n':
@@ -132,8 +138,8 @@ void loop() {
               }
               break;
             case 'p': //pinch_opened
-              if(photoValue[1] > 300/6){
-                pinch_state = i; //inside_close
+              if(photoValue[1] > 300/2){
+                pinch_state = 'i'; //inside_close
                 Wire.beginTransmission(WIRE_SLAVE_MOVE_ADDRESS[i]);
                 Wire.write(pinch_state);
                 Wire.endTransmission();
@@ -149,19 +155,20 @@ void loop() {
               int input = analogRead(u_sonicPinReceive);
               Serial.print("ultra: ");
               Serial.print(input);
-//              if(input >=600 || input <= 400){
-              if(input > 500){
+//              if(input >=500 || input <= 10){
+              if(input >= 900){
+                Serial.println("write!1!!!!");
                 for(int i = 0; i < 4; i++){
                   Wire.beginTransmission(WIRE_SLAVE_MOVE_ADDRESS[i]);
                   Wire.write('r');
                   Wire.endTransmission();
                 }
               }
-              break;
-            }
-      
-        data_index++;
-//      }      
+            break;
+//          }
+//            break;
+//        data_index++;
+      }      
       
 //      Serial.print(" ||| ");
       delay(100);
@@ -226,7 +233,6 @@ void loop() {
     
     
     Serial.println();
-  //}
   
   //受信
   if(mySerial.available()){
@@ -258,10 +264,6 @@ void loop() {
     }
     
   }
-
-
-  
-
   
   delay(50);
 }

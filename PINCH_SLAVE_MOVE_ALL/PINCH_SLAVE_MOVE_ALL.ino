@@ -2,7 +2,7 @@
 #include <Servo.h>
 #include <Wire.h>
 
-#define WIRE_SLAVE_ADDRESS 3
+#define WIRE_SLAVE_ADDRESS 6
 
 // PINCH flag statement
 #define NONE 0
@@ -12,6 +12,7 @@
 #define MOVE 4
 #define RELEASE_FLAG 5
 #define RELEASE 6
+#define INITIALIZE 7
 
 // stepping motor statement 
 #define STOP 0
@@ -25,8 +26,8 @@
 // time between open to close (about 30ms * PINCH_OPEN_TIME)
 #define PINCH_OPEN_TIME 50;
 // between release to close 
-#define PINCH_RELEASE_TIME 100;
-#define PINCH_FINISH_TIME 30;
+#define PINCH_RELEASE_TIME 300;
+#define PINCH_FINISH_TIME 300;
 // pin asign
 int photoReflecterPin[2] = {0,1};
 int servoPin = 2;
@@ -68,11 +69,13 @@ void setup() {
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 void loop() {
-  Serial.print(pinchState);
-  Serial.print(" : ");
-  Serial.print(analogRead(photoReflecterPin[0]));
-  Serial.print(" , ");
-  Serial.println(analogRead(photoReflecterPin[1]));
+//  Serial.print(pinchState);
+//  Serial.print(" : ");
+//  Serial.print(analogRead(photoReflecterPin[0]));
+//  Serial.print(" , ");
+//  Serial.println(analogRead(photoReflecterPin[1]));
+  
+  Serial.print(releaseTimer);
   
 //  if((pinchState == NONE) && analogRead(photoReflecterPin[0]) > 300){
 //    pinchState = DETECT_CLOTH;
@@ -115,7 +118,8 @@ void loop() {
     if(finishTimer < 0){
 //      pinchState = NONE;
       pinchState = NONE;
-      releaseTimer = PINCH_FINISH_TIME;
+      finishTimer = PINCH_FINISH_TIME;
+      steppingMotorControl(STOP);
     }
   }
   
@@ -126,7 +130,8 @@ void loop() {
     case MOVE: myServo.write(SERVO_CLOSE); break;
 //    case RELEASE: myServo.write(SERVO_OPEN);  break;  
     case RELEASE_FLAG: myServo.write(SERVO_CLOSE); break;
-    case RELEASE: myServo.write(SERVO_OPEN);  break;    
+    case RELEASE: myServo.write(SERVO_OPEN);  break;
+    case INITIALIZE: initialize(); break;
   }
   
   // Serial monitoring
@@ -160,8 +165,8 @@ void steppingMotorControl(int mode){
 void returnSensorNum(){
   char sendData[3];
 //  sendData[0] = (char)(pinchState);
-  sendData[0] = (char)(analogRead(photoReflecterPin[0])/4);
-  sendData[1] = (char)(analogRead(photoReflecterPin[1])/4);
+  sendData[0] = (unsigned char)(analogRead(photoReflecterPin[0])/4);
+  sendData[1] = (unsigned char)(analogRead(photoReflecterPin[1])/4);
   
   switch(pinchState){
     case NONE:
@@ -207,8 +212,7 @@ void setSensorValue(int a){
   while(Wire.available()){
     c = Wire.read(); // 1バイト受信
   }
-  Serial.println((int)c);
-  
+  Serial.println(c);
   if(c == 'c'){
     steppingMotorControl(CLOCKWISE);
 //    pinchState = MOVE;
@@ -240,6 +244,24 @@ void setSensorValue(int a){
     case 'r':
       pinchState = RELEASE;
       break;
+    case 's':
+      pinchState = INITIALIZE;
+      break;
   }
 }
+
+void initialize(){
+  // servo check
+  myServo.write(SERVO_OPEN);
+  delay(500);
+  myServo.write(SERVO_CLOSE);
+    
+  openTimer = PINCH_OPEN_TIME;
+  releaseTimer = PINCH_RELEASE_TIME;
+  finishTimer = PINCH_FINISH_TIME;
+  
+  pinchState = NONE;
+  
+  steppingMotorControl(NONE);
+}  
 

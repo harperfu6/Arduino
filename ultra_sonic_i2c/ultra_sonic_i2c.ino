@@ -2,17 +2,25 @@
 char charA_out[10];
 
 const int u_sensorNum = 3;//測距センサの数
-int interval[u_sensorNum]; //超音波の受信までにかかった時間
-double distance[u_sensorNum]; //距離
-double Distance[u_sensorNum][3]; //直前３回までの距離履歴
-double LowPass[u_sensorNum][2]; //直前２回までのローパスの値
+unsigned long interval[u_sensorNum]; //超音波の受信までにかかった時間
+unsigned long distance[u_sensorNum]; //距離
+unsigned long Distance[u_sensorNum][3]; //直前３回までの距離履歴
+unsigned long LowPass[u_sensorNum][2]; //直前２回までのローパスの値
 
-//int location = 0;
 const int locArraySize = 6;
 int locationArray[locArraySize];
-//int locationAverageArray[]
 
-int location[2];
+const int dataArraySize = 10;
+unsigned long dataArray0[dataArraySize];
+unsigned long dataArray1[dataArraySize];
+unsigned long dataArray2[dataArraySize];
+
+unsigned int nearCountA = 0;
+unsigned int nearCountB = 0;
+unsigned int nearCountC = 0;
+
+
+double location[2]; //ローパスのため
 
 void setup() {
   Serial.begin(9600);
@@ -47,6 +55,12 @@ void setup() {
     locationArray[i] = 0;
   }
   
+  for(int i = 0; i < dataArraySize; i++){
+    dataArray0[i] = 1000000000;
+    dataArray1[i] = 1000000000;
+    dataArray2[i] = 1000000000;
+  }
+  
   for(int i = 0; i < 2; i++){
     location[i] = 0;
   }
@@ -64,40 +78,31 @@ void loop() {
 //        Serial.read();
 
         // pulse !
-        for(int i = 0; i < u_sensorNum + 2; i += 2){
-//  for(int i = 4; i < 5; i += 2){
+        for(int i = 0; i < u_sensorNum * 2; i += 2){
+          
+          if(i != 2){ //真ん中が壊れているため
           digitalWrite( i+2, HIGH );
-          delayMicroseconds( 50 );
+          delayMicroseconds( 10 );
           digitalWrite( i+2, LOW );
         
           // mesure the interval 
           interval[i/2] = pulseIn( i+3, HIGH );
         
-          delay(50);
+          delay(5);
+          }
         }
 //        
         for(int i = 0; i < u_sensorNum; i++){
           distance[i] = interval[i] * 0.017; //cm
-//          LowPass[i][0] = distance[i];
         }
+        distance[1] = 1000000; //真ん中の値を擬似的にセット
 //        
-//        Serial.print( distance[0], 4 );
-//        Serial.print( "\t" );
-//        Serial.print( distance[1], 4 );
-//        Serial.print( "\t" );
-//        Serial.print( distance[2], 4 );
-//        Serial.print( "\n" );
-        
-//        if(distance[2] > 0 && distance[2] < 60){
-//          Serial.print("location:");
-//          Serial.print("2");
-//          Serial.print(";");  
-//        }
-//        else{
-//          Serial.print("location:");
-//          Serial.print("0");
-//          Serial.print(";");
-//        }
+//        Serial.print( distance[0]);
+//        Serial.print( "   \t" );
+//        Serial.print( distance[1]);
+//        Serial.print( "   \t" );
+//        Serial.print( distance[2]);
+//        Serial.print( "\n" );    
         
 //        
 //        Serial.print("left:");
@@ -110,14 +115,6 @@ void loop() {
 //        Serial.print((int)distance[2]);
 //        Serial.print(";");
         
-//        for(int i = 0; i < u_sensorNum; i++){
-//          if(distance[i] < 100){
-//            digitalWrite(i+8, HIGH);
-//          }
-//          else{
-//            digitalWrite(i+8, LOW);
-//          }
-//        }
         
         //average lowpass
 //        for(int i = 0; i < u_sensorNum; i++){
@@ -140,72 +137,41 @@ void loop() {
 //        location = getLocation(distance);
 
 
-
-
-        getLocation2(distance);
-        locationArray[locArraySize - 1] = location[0];
-        int average = (int)averageValue();
-        Serial.print("location:");        
-        Serial.print(average);
-        Serial.print(";");
-
-
-
-   
-//        Serial.println(location[0]);
-//        Serial.println((int)averageValue());
-          //int average = (int)averageValue();
-          
-//          Serial.print("location:");
-//          Serial.print((int)averageValue());
-////          Serial.print("2");
-//          Serial.print(";");
-          
-//          delay(15);
-          
+        //とりあえず一番近い場所をlocation[0]に入れる
+        getLocation4(distance);
         
-//        if(average == 0){
-//          digitalWrite(8, LOW);
-//          digitalWrite(9, LOW);
-//          digitalWrite(10, LOW);
-//        }
-//        else if(average == 1){
-//          digitalWrite(8, HIGH);
-//          digitalWrite(9, LOW);
-//          digitalWrite(10, LOW);
-//        }
-//        else if(average == 2){
-//          digitalWrite(8, LOW);
-//          digitalWrite(9, HIGH);
-//          digitalWrite(10, LOW);
-//        }
-//        else if(average == 3){
-//          digitalWrite(8, LOW);
-//          digitalWrite(9, LOW);
-//          digitalWrite(10, HIGH);
-//        }
+        //場所でローバス
+        double tempLocation = lowPass(location[1], location[0]);
+
+        //四捨五入
+        int newLocation = (int)floor(tempLocation + 0.7);
         
-//        locationArray[locArraySize - 1] = location;
+//        location[1] = location[0];
+          location[1] = tempLocation;
+//        locationArray[locArraySize - 1] = location[0];
 //        int average = (int)averageValue();
-//        Serial.println(average);
 
-//        Serial.print( interval, DEC );
-//        Serial.print( "\t" );
 
-//      }
+
+//このブロックがメインに送る内容（の一部）
+        Serial.print("location:");        
+        Serial.print(newLocation);
+//        Serial.print(location[0]);
+        Serial.print(";");
+        
 }
 
-double average(double data[]){
-  
+double average(unsigned long data[]){
+
   return (data[0] + data[1] + data[2]) / 3;
 }
 
 double lowPass(double lowpass, double data){
 
-  return 0.9*lowpass + 0.1*data;
+  return 0.99*lowpass + 0.01*data;
 }
 
-void getLocation1(double data[]){
+void getLocation1(unsigned long data[]){
   
   if(data[0] > 100 && data[1] > 100 && data[2] > 100){
     location[0] = 0;
@@ -232,14 +198,16 @@ void getLocation1(double data[]){
   location[1] = location[0];
 }
 
-void getLocation2(double data[]){
-  if((data[0] < 100 && data[0] > 0) || (data[1] < 100 && data[1] > 0) || (data[2] < 100 && data[2] > 0)){
-    int minIndex = 0;
-    int minValue = data[0];
+void getLocation2(unsigned long data[]){
+  if((data[0] < 1000000 && data[0] > 0) || (data[1] < 1000000 && data[1] > 0) || (data[2] < 1000000 && data[2] > 0)){
+    unsigned long minIndex = 0;
+    unsigned long minValue = data[0];
     for(int i = 1; i < 3; i++){
-      if(data[i] < minValue){
-        minIndex = i;
-        minValue = data[i];
+      if(data[i] > 0){
+        if(data[i] < minValue){
+          minIndex = i;
+          minValue = data[i];
+        }
       }
     }
     location[0] = minIndex + 1;
@@ -250,6 +218,205 @@ void getLocation2(double data[]){
   
   location[1] = location[0];
 }
+
+void getLocation3(unsigned long data[]){
+  
+//        Serial.print( data[0], 4 );
+//        Serial.print( "   \t" );
+//        Serial.print( data[1], 4 );
+//        Serial.print( "   \t" );
+//        Serial.print( data[2], 4 );
+//        Serial.print( "\n" );
+  
+  unsigned long sumA = 0;
+  unsigned long sumB = 0;
+  unsigned long sumC = 0;
+  
+  nearCountA = (unsigned long)0;
+  nearCountB = (unsigned long)0;
+  nearCountC = (unsigned long)0;
+  
+  dataArray0[dataArraySize - 1] = data[0];
+  dataArray1[dataArraySize - 1] = data[1];
+  dataArray2[dataArraySize - 1] = data[2];
+  
+  for(int i = 0; i < dataArraySize - 1; i++){
+    dataArray0[i] = dataArray0[i+1];
+    dataArray1[i] = dataArray1[i+1];
+    dataArray2[i] = dataArray2[i+1];
+    
+    if(dataArray0[i] < (unsigned long)500){
+      nearCountA++;
+    }
+    if(dataArray1[i] < (unsigned long)500){
+      nearCountB++;
+    }
+    if(dataArray2[i] < (unsigned long)500){
+      nearCountC++;
+    }
+    
+//        Serial.print("distance0 : ");
+//        Serial.print(dataArray0[i], 4 );
+//        Serial.print( "   \t" );
+//        Serial.print("distance1 : ");
+//        Serial.print(dataArray1[i], 4 );
+//        Serial.print( "   \t" );
+//        Serial.print("distance2 : ");
+//        Serial.print(dataArray2[i], 4 );
+//        Serial.print( "\n" );
+    
+    sumA += dataArray0[i];
+    sumB += dataArray1[i];
+    sumC += dataArray2[i];
+  }
+  
+//      Serial.print("count0 : ");
+//        Serial.print(nearCountA);
+//        Serial.print( "   \t" );
+//        Serial.print("count1 : ");
+//        Serial.print(nearCountB);
+//        Serial.print( "   \t" );
+//        Serial.print("count2 : ");
+//        Serial.print(nearCountC);
+//        Serial.print( "\n" );
+  
+  if(nearCountA > 0 || nearCountB > 0 || nearCountC > 0){
+    unsigned long maxIndex = 1;
+    unsigned long maxValue = nearCountA;
+    if(nearCountB > maxValue){
+      if(sumB < sumA){
+        maxIndex = 2;
+        maxValue = nearCountB;
+      }
+    }
+    if(nearCountC > maxValue){
+      if(sumC < sumB){
+        maxIndex = 3;
+      }
+    }
+    location[0] = maxIndex;
+  }
+  else{
+    location[0] = 0;
+  }
+  
+//  sum0 /= (dataArraySize - 1);
+//  sum1 /= (dataArraySize - 1);
+//  sum2 /= (dataArraySize - 1);
+  
+//  if(sum0 < 1000000 || sum1 < 1000000 || sum2 < 1000000){
+//    unsigned long minIndex = 1;
+//    unsigned long minValue = sum0;
+//    if(sum1 < minValue){
+//      minIndex = 2;
+//      minValue = sum1;
+//    }
+//    if(sum2 < minValue){
+//      minIndex = 3;
+//    }
+//    location[0] = minIndex;
+//  }
+//  else{
+//    location[0] = 0;
+//  }
+}
+
+void getLocation4(unsigned long data[]){
+  
+//        Serial.print( data[0], 4 );
+//        Serial.print( "   \t" );
+//        Serial.print( data[1], 4 );
+//        Serial.print( "   \t" );
+//        Serial.print( data[2], 4 );
+//        Serial.print( "\n" );
+  
+  nearCountA = 0;
+//  nearCountB = (unsigned long)0;
+  nearCountC = 0;
+  
+  dataArray0[dataArraySize - 1] = data[0];
+//  dataArray1[dataArraySize - 1] = data[1];
+  dataArray2[dataArraySize - 1] = data[2];
+  
+  for(int i = 0; i < dataArraySize - 1; i++){
+    dataArray0[i] = dataArray0[i+1];
+//    dataArray1[i] = dataArray1[i+1];
+    dataArray2[i] = dataArray2[i+1];
+    
+    if(dataArray0[i] < (unsigned long)100){
+      nearCountA++;
+//      Serial.println("countA!!");
+    }
+//    if(dataArray1[i] > (unsigned long)20000){
+//      nearCountB++;
+//    }
+    if(dataArray2[i] < (unsigned long)100){
+      nearCountC++;
+//      Serial.println("countC!!");
+    }
+    
+//        Serial.print("distance0 : ");
+//        Serial.print(dataArray0[i], 4 );
+//        Serial.print( "   \t" );
+//        Serial.print("distance1 : ");
+//        Serial.print(dataArray1[i], 4 );
+//        Serial.print( "   \t" );
+//        Serial.print("distance2 : ");
+//        Serial.print(dataArray2[i], 4 );
+//        Serial.print( "\n" );
+  }
+  
+//      Serial.print("count0 : ");
+//        Serial.print(nearCountA);
+//        Serial.print( "   \t" );
+//        Serial.print("count1 : ");
+//        Serial.print(nearCountB);
+//        Serial.print( "   \t" );
+//        Serial.print("count2 : ");
+//        Serial.print(nearCountC);
+//        Serial.print( "\n" );
+
+  nearCountB = 0; //ただいま故障中
+  
+  if(nearCountA > 0 || nearCountB > 0 || nearCountC > 0){
+    unsigned long maxIndex = 1;
+    unsigned long maxValue = nearCountA;
+//    if(nearCountB > maxValue){
+//      if(sumB < sumA){
+//        maxIndex = 2;
+//        maxValue = nearCountB;
+//      }
+//    }
+    if(nearCountC > maxValue){
+      maxIndex = 3;
+    }
+    location[0] = maxIndex;
+  }
+  else{
+    location[0] = 0;
+  }
+  
+//  sum0 /= (dataArraySize - 1);
+//  sum1 /= (dataArraySize - 1);
+//  sum2 /= (dataArraySize - 1);
+  
+//  if(sum0 < 1000000 || sum1 < 1000000 || sum2 < 1000000){
+//    unsigned long minIndex = 1;
+//    unsigned long minValue = sum0;
+//    if(sum1 < minValue){
+//      minIndex = 2;
+//      minValue = sum1;
+//    }
+//    if(sum2 < minValue){
+//      minIndex = 3;
+//    }
+//    location[0] = minIndex;
+//  }
+//  else{
+//    location[0] = 0;
+//  }
+}
+
 
 double averageValue(){
   int sum = 0;
@@ -266,10 +433,12 @@ double averageValue(){
 void myReadLine(int a){
   int cnt_buf = 0; 
   
+  
 //  Serial.println("get!!");
   //受信したら
   if(Wire.available() > 0){
     delay(100);
+//    Serial.print("comeI2C!!!");
     
     cnt_buf = max(79,Wire.available());  //受信文字数 最大79文字
     for (int iii = 0; iii < cnt_buf; iii++){

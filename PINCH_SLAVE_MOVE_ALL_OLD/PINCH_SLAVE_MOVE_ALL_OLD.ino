@@ -2,7 +2,7 @@
 #include <Servo.h>
 #include <Wire.h>
 
-#define WIRE_SLAVE_ADDRESS 6
+#define WIRE_SLAVE_ADDRESS 5
 
 // PINCH flag statement
 #define NONE 0
@@ -64,11 +64,11 @@ void setup() {
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 void loop() {
-//  Serial.print(pinchState);
-//  Serial.print(" : ");
-//  Serial.print(analogRead(photoReflecterPin[0]));
-//  Serial.print(" , ");
-//  Serial.println(analogRead(photoReflecterPin[1]));
+  Serial.print(pinchState);
+  Serial.print(" : ");
+  Serial.print(analogRead(photoReflecterPin[0]));
+  Serial.print(" , ");
+  Serial.println(analogRead(photoReflecterPin[1]));
   
 //  if((pinchState == NONE) && analogRead(photoReflecterPin[0]) > 300){
 //    pinchState = DETECT_CLOTH;
@@ -114,9 +114,9 @@ void loop() {
   }
   
   // Serial monitoring
-  Serial.println(analogRead(photoReflecterPin[0]));
+//  Serial.println(analogRead(photoReflecterPin[0]));
 //  Serial.print(" , ");
-  Serial.println(analogRead(photoReflecterPin[1]));
+//  Serial.println(analogRead(photoReflecterPin[1]));
 //  Serial.print(" , ");
 //  Serial.println(flag);
   delay(30);
@@ -144,8 +144,8 @@ void steppingMotorControl(int mode){
 void returnSensorNum(){
   char sendData[3];
 //  sendData[0] = (char)(pinchState);
-  sendData[0] = (char)(analogRead(photoReflecterPin[0])/4);
-  sendData[1] = (char)(analogRead(photoReflecterPin[1])/4);
+  sendData[0] = (unsigned char)(analogRead(photoReflecterPin[0])/4);
+  sendData[1] = (unsigned char)(analogRead(photoReflecterPin[1])/4);
   
   switch(pinchState){
     case NONE:

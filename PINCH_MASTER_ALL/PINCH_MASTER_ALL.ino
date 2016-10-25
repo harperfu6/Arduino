@@ -14,6 +14,10 @@ SoftwareSerial mySerial(9, 8);
 #define CLOCKWISE 1
 #define ANTCLOCKWISE 2
 
+#define CURTAIN_OPEN 0
+#define CURTAIN_CLOSE 1
+#define CURTAIN_STOP 2
+
 // PINCH flag statement
 //#define NONE 0
 //#define DETECT_CLOTH 1
@@ -42,15 +46,18 @@ SoftwareSerial mySerial(9, 8);
 //int servoPin = 2;
 
 int u_sonicPinReceive = 0; // analog
+int u_sonicCount[3];
 
 //Servo myServo[4];
 //int openTimer[4], releaseTimer[4];
 
 int WIRE_SLAVE_MOVE_ADDRESS[4] = {3,4,5,6}; //4 pinches
 
-int atTinyControlPin[2] = {3,4};
-#define CURTAIN_TIME 100;
+//int atTinyControlPin[2] = {3,4};
+int cartainPin[2] = {3,4};
+#define CURTAIN_TIME 30;
 int curtainTime;
+boolean curtainStart, initCurtain;
 
 char pinch_state;
 int photoValue[2] = {0,0};
@@ -59,9 +66,15 @@ int humidity = 50;
 int temperature = 25;
 int bright = 2;
 
+int light[4]; //光の値を格納
+int servo_rate = 360/90;
+int pre_angle;
+
 char buf[256]; // 受信用バッファを255文字分確保
 //char c; // 受信用文字
 int count = 0; // 受信用カウンタ
+
+char last_char;
 
 
 void setup() {
@@ -70,7 +83,29 @@ void setup() {
   mySerial.begin(38400);
   Wire.begin();
   
+  delay(1000);
+  
+  for(int i = 0; i < 4; i++){\
+    Wire.beginTransmission(WIRE_SLAVE_MOVE_ADDRESS[i]);
+    Wire.write('s'); //初期化
+    Wire.endTransmission();
+    Serial.println("start");
+    delay(500);
+  }
+  
   curtainTime = CURTAIN_TIME;
+  pinMode(cartainPin[0], OUTPUT);
+  pinMode(cartainPin[1], OUTPUT);
+  digitalWrite(cartainPin[0],LOW);
+  digitalWrite(cartainPin[1],LOW);
+  
+  curtainControl(CURTAIN_CLOSE);
+  initCurtain = true;
+  
+  for(int i = 0; i < 3; i++){
+    u_sonicCount[i] = 0;
+  }
+
   delay(100);
 }
 
@@ -103,7 +138,8 @@ void loop() {
 //      int pinch_state = 0;
       while(Wire.available()){
 
-        char c = Wire.read();
+//        unsigned char c = Wire.read();
+          char c = Wire.read();
         
 //        char c = Wire.read();
 //        Serial.print((int)c);
@@ -111,21 +147,36 @@ void loop() {
 //        
         if(data_index == 0){
           photoValue[0] = (int)c;
+          Serial.print("photo1: ");
           Serial.print(photoValue[0]);
           Serial.print(" ");
         }
         else if(data_index == 1){
           photoValue[1] = (int)c;
+          Serial.print("photo2: ");
           Serial.print(photoValue[1]);
           Serial.print(" ");
         }
         else if(data_index == 2){
-          pinch_state = c;
+          
+          if(c == ''){
+            pinch_state = last_char;
+          }
+          else{
+            pinch_state = c;
+          }
+          
+          
+//          pinch_state = c;
+          Serial.print("State: ");
           Serial.print(pinch_state);
+
           Serial.print(" ");
+          last_char = pinch_state;
         }
         data_index++;
       }
+      Serial.println("");
       
           switch (pinch_state){
             case 'n':
@@ -138,8 +189,18 @@ void loop() {
               }
               break;
             case 'p': //pinch_opened
-              if(photoValue[1] > 300/6){
-                pinch_state = i; //inside_close
+            {
+              float threshold = 0.0;
+              if(i == 1){
+                threshold = 150;
+                Serial.println("111111111");
+              }
+              else{
+                threshold = 50;
+              }
+              
+              if(photoValue[1] > threshold){
+                pinch_state = 'i'; //inside_close
                 Wire.beginTransmission(WIRE_SLAVE_MOVE_ADDRESS[i]);
                 Wire.write(pinch_state);
                 Wire.endTransmission();
@@ -165,14 +226,17 @@ void loop() {
                   Wire.endTransmission();
                 }
               }
+            }
               break;
             case 'm':
+            {
               //u_sonic
-              int input = analogRead(u_sonicPinReceive);
-              Serial.print("ultra: ");
-              Serial.print(input);
-//              if(input >=600 || input <= 400){
-              if(input > 500){
+//              int input = analogRead(u_sonicPinReceive);
+//              Serial.print("ultra: ");
+//              Serial.print(input);
+              if(input >= 500){
+                Serial.println("gogogogogogogogogogogo");
+//              if(u_sonicCount >= 3){
                 for(int i = 0; i < 4; i++){
                   Wire.beginTransmission(WIRE_SLAVE_MOVE_ADDRESS[i]);
                   Wire.write('f');
@@ -199,15 +263,31 @@ void loop() {
                     Wire.endTransmission();
                   }
                 }
-              } 
+              }
+            }
 //            }
             break;
-//            case 'r':
+            case 'r':
+              //return back after rota
+              if(i == 0){
+                Wire.beginTransmission(WIRE_SLAVE_MOVE_ADDRESS[i]);
+                Wire.write('a'); //stepping start
+                Wire.endTransmission();
+              }
+              else if(i == 1){
+                Wire.beginTransmission(WIRE_SLAVE_MOVE_ADDRESS[i]);
+                Wire.write('c'); //stepping start
+                Wire.endTransmission();
+                Serial.println("gyakuuuuuuu");
+              }
+//              Wire.beginTransmission(WIRE_SLAVE_MOVE_ADDRESS[i]);
+//              Wire.write('c'); //stepping start
+//              Wire.endTransmission();
 //              //カーテン
 //              steppingMotorControl(ANTCLOCKWISE);
-//              break;
+              break;
       
-        data_index++;
+//        data_index++;
       }      
       
 //      Serial.print(" ||| ");
@@ -219,45 +299,110 @@ void loop() {
 
     int data_index = 0;
     while(Wire.available()){
+      Serial.println("lllllllllllllllllll");
       char c = Wire.read();
-      Serial.print((int)c);
+      //light(4 photo_reflecters)
+      if(data_index == 2 || data_index == 3 || data_index == 4 || data_index == 5){
+        Serial.print("index");
+        Serial.print(data_index);
+        Serial.print(": ");
+        Serial.println((int)c * 8);
+      }
+      else{
+        Serial.print((int)c);  
+      }
       Serial.print(" ");
       if(data_index == 0){
         humidity = c;
       }
-      if(data_index == 1){
+      else if(data_index == 1){
         temperature = c;
       }
-      if((int)c < 10 && (int)c > 0){
-        if(data_index == 2){
-          Wire.beginTransmission(WIRE_SLAVE_TOP_ADDRESS);
-          Wire.write("2");
-          Wire.endTransmission();
-          Serial.println("index:2");
-          bright = 4;
-        }
-        else if(data_index == 3){
-          Wire.beginTransmission(WIRE_SLAVE_TOP_ADDRESS);
-          Wire.write("3");
-          Wire.endTransmission();
-          Serial.println("index:3");
-        }
-        else if(data_index == 4){
-          Wire.beginTransmission(WIRE_SLAVE_TOP_ADDRESS);
-          Wire.write("4");
-          Wire.endTransmission();
-          Serial.println("index:4");
-          bright = 2;
-        }
-        else if(data_index == 5){
-          Wire.beginTransmission(WIRE_SLAVE_TOP_ADDRESS);
-          Wire.write("5");
-          Wire.endTransmission();
-          Serial.println("index:5");
-        }
+      else if(data_index == 2 && (int)c > 0){
+        light[0] = (int)c * 8;
+      }
+      else if(data_index == 3 && (int)c > 0){
+        light[1] = (int)c * 8;
+      }
+      else if(data_index == 4 && (int)c > 0){
+        light[2] = (int)c * 8;
+      }
+      else if(data_index == 5 && (int)c > 0){
+        light[3] = (int)c * 8;
       }
       data_index++;
     }
+      //角度を計算
+      sendAngle();
+
+      //カーテン
+//      if(light[0] < 20 && light[1] < 20 && light[2] < 20 && light[3] < 20){
+if(light[0] < 20 && light[1] < 20 && light[2] < 20){
+          curtainControl(CURTAIN_OPEN);
+          if(!curtainStart){
+            curtainStart = true;
+          }
+      }      
+
+//      if((int)c * 8 > 800){
+//        if(data_index == 2){
+//          Wire.beginTransmission(WIRE_SLAVE_TOP_ADDRESS);
+//          Wire.write("2");
+//          Wire.endTransmission();
+//          Serial.println("index:2");
+//          bright = 4;
+//        }
+//        else if(data_index == 3){
+//          Wire.beginTransmission(WIRE_SLAVE_TOP_ADDRESS);
+//          Wire.write("3");
+//          Wire.endTransmission();
+//          Serial.println("index:3");
+//        }
+//        else if(data_index == 4){
+//          Wire.beginTransmission(WIRE_SLAVE_TOP_ADDRESS);
+//          Wire.write("4");
+//          Wire.endTransmission();
+//          Serial.println("index:4");
+//          bright = 2;
+//          
+////          //カーテン
+////          curtainControl(CURTAIN_OPEN);
+////          if(!curtainStart){
+////            curtainStart = true;
+////          }
+//        }
+//        else if(data_index == 5){
+//          Wire.beginTransmission(WIRE_SLAVE_TOP_ADDRESS);
+//          Wire.write("5");
+//          Wire.endTransmission();
+//          Serial.println("index:5");
+//          
+//        }
+//      }
+//      data_index++;
+//    }
+    
+    if(initCurtain){
+      curtainTime--;
+      if(curtainTime < 0){
+        initCurtain = false;
+        curtainControl(CURTAIN_STOP);
+        curtainTime = CURTAIN_TIME;
+      }
+    }
+    
+    if(curtainStart){
+      curtainTime--;
+      Serial.print("curtainTime : ");
+      Serial.println(curtainTime);
+      if(curtainTime < 0){
+        curtainStart = false;
+        curtainControl(CURTAIN_STOP);
+        curtainTime = CURTAIN_TIME;
+        Serial.println("stopppppppp");
+      }
+    }
+    
     
     
     
@@ -314,6 +459,7 @@ void loop() {
       Wire.endTransmission();
     }
     
+    
   }
 
 
@@ -323,20 +469,139 @@ void loop() {
   delay(200);
 }
 
-
-
-void steppingMotorControl(int mode){
-  switch(mode){
-    case STOP:
-      digitalWrite(atTinyControlPin[0],LOW);
-      break;
-    case CLOCKWISE:
-      digitalWrite(atTinyControlPin[0],HIGH);
-      digitalWrite(atTinyControlPin[1],LOW);
-      break;
-    case ANTCLOCKWISE:
-      digitalWrite(atTinyControlPin[0],HIGH);
-      digitalWrite(atTinyControlPin[1],HIGH);
-      break;
+//光による角度を計算
+void sendAngle(){
+  int first_light = 600;
+  int second_light = 600;
+  int first_index = 10;
+  int second_index = 10;
+  
+  for(int i = 0; i < 3; i++){
+    if(light[i] > first_light){
+      first_index = i;
+      first_light = light[i];
+    }
   }
+  
+  for(int i = 0; i < 3; i++){
+    if(light[i] > second_light){
+      if(i != first_index){
+        second_index = i;
+        second_light = light[i];
+      }
+    }
+  }
+  
+  Serial.print("first_index: ");
+  Serial.println(first_index);
+  Serial.print("second_index: ");
+  Serial.println(second_index);
+  
+  int base_angle = 0;
+  int return_angle = 0;
+  if(second_index == 10){
+    if(first_index == 0){
+      return_angle = 0;
+    }
+    else if(first_index == 1){
+      return_angle = 90/servo_rate;
+    }
+    else if(first_index == 2){
+      return_angle = 180/servo_rate;
+    }
+    else if(first_index == 3){
+      return_angle = 270/servo_rate;
+    }
+    else{
+      return;
+    }
+  }
+  else{
+    if(first_index == 0 && second_index == 1){
+      base_angle = 0;
+      return_angle = (second_light / (first_light + second_light)) * (90 /servo_rate) + base_angle;
+    }
+    else if(first_index == 1 && second_index == 0){
+      base_angle = 90/servo_rate;
+      return_angle = base_angle - (second_light / (first_light + second_light)) * (90 /servo_rate);
+    }
+    else if(first_index == 1 && second_index == 2){
+      base_angle = 90/servo_rate;
+      return_angle = (second_light / (first_light + second_light)) * (90 /servo_rate) + base_angle;
+    }
+    else if(first_index == 2 && second_index == 1){
+      base_angle = 180/servo_rate;
+      return_angle = base_angle - (second_light / (first_light + second_light)) * (90 /servo_rate);
+    }
+    else if(first_index == 2 && second_index == 3){
+      base_angle = 180/servo_rate;
+      return_angle = (second_light / (first_light + second_light)) * (90 /servo_rate) + base_angle;
+    }
+    else if(first_index == 3 && second_index == 2){
+      base_angle = 270/servo_rate;
+      return_angle = base_angle - (second_light / (first_light + second_light)) * (90 /servo_rate);
+    }
+    else if(first_index == 3 && second_index == 0){
+      base_angle = 270/servo_rate;
+      return_angle = (second_light / (first_light + second_light)) * (90 /servo_rate) + base_angle;
+    }
+    else if(first_index == 0 && second_index == 3){
+      base_angle = 270/servo_rate;
+      return_angle = (first_light / (first_light + second_light)) * (90 /servo_rate) + base_angle;
+    }
+  }
+  
+  pre_angle = return_angle;
+  
+  int range = return_angle / 8;
+
+Serial.print("return_angle: ");
+Serial.println(return_angle);
+  
+          Wire.beginTransmission(WIRE_SLAVE_TOP_ADDRESS);
+          if(return_angle == 0){
+            Wire.write('a');
+            Serial.println("aaaaa");
+          }
+          else if(return_angle == 22){
+            Wire.write('b');
+            Serial.println("bbbbb");
+          }
+          else if(return_angle == 45){
+            Wire.write('c');
+            Serial.println("ccccc");
+          }
+          Wire.endTransmission();
+          Serial.println(return_angle);
+
+//  switch(first_index){
+//    case 0:
+//      base_angle = 0;
+//      break;
+//    case 1:
+//      base_angle = 90/servo_rate;
+//      break;
+//    case 2:
+//      base_angle = 180/servo_rate;
+//      break;
+//    case 3:
+//      base_angle = 270/servo_rate;
+//      break;
+//  }
+  
+  
+}
+
+void curtainControl(int mode){
+  switch(mode){
+    case CURTAIN_OPEN:
+      digitalWrite(cartainPin[0],HIGH); digitalWrite(cartainPin[1],HIGH);
+      break;
+    case CURTAIN_CLOSE:
+      digitalWrite(cartainPin[0],LOW); digitalWrite(cartainPin[1],HIGH);
+      break;
+    case CURTAIN_STOP:
+      digitalWrite(cartainPin[0],LOW); digitalWrite(cartainPin[1],LOW);
+      break;
+  }  
 }
