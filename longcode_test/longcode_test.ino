@@ -7,6 +7,37 @@ int led = 9;
 int last = 0;
 unsigned long us = micros();
 
+enum Button{
+AIRCON_ON,
+AIRCON_OFF,
+DRIVE_AUTO,
+DRIVE_COOL,
+DRIVE_DRY,
+DRIVE_WARM,
+WIND_AUTO,
+WIND_LIGHT,
+WIND_STRONG,
+WIND_HARD,
+TEMP_16,
+TEMP_17,
+TEMP_18,
+TEMP_19,
+TEMP_20,
+TEMP_21,
+TEMP_22,
+TEMP_23,
+TEMP_24,
+TEMP_25,
+TEMP_26,
+TEMP_27,
+TEMP_28,
+TEMP_29,
+TEMP_30,
+TEMP_31,
+AUTO_FLAP
+};
+
+
 // エアコンオフ
 unsigned int aircon_off[] = {614,184,66,58,65,57,66,58,65,58,65,182,66,57,66,58,65,182,66,182,66,57,66,58,65,58,65,58,66,57,66,58,65,182,66,57,66,58,65,58,65,182,66,182,65,182,65,58,65,57,66,58,65,58,65,58,65,182,66,58,65,57,66,58,65,58,65,58,65,58,66,58,65,58,65,58,65,58,65,58,65,58,66,57,66,58,65,58,65,58,65,58,65,58,65,58,65,58,65,58,65,58,65,58,65,933,617,184,65,58,65,58,65,58,65,58,65,182,65,58,65,58,65,182,65,182,66,58,66,58,65,58,65,58,66,57,66,58,65,182,66,57,66,58,65,59,64,182,66,182,65,182,66,58,65,58,65,58,65,58,65,57,66,182,66,57,66,58,65,58,65,58,65,57,66,58,65,58,65,58,65,58,65,57,66,58,66,58,65,58,65,58,65,57,66,58,65,58,65,58,65,58,65,57,66,58,65,58,65,58,65};
 //エアコンオン
@@ -129,9 +160,129 @@ void sendData(unsigned int data[], int dataSize){
   }
 }
 
-void loop() {
+// 送る信号を決定
+void sendSignal(int button) {
 
   int dataSize;
+
+  switch (button){
+    case AIRCON_OFF:{
+      dataSize = sizeof(aircon_off) / sizeof(aircon_off[0]);
+      sendData(aircon_off, dataSize);
+    }
+      break;
+    case AIRCON_ON:{
+      dataSize = sizeof(aircon_on) / sizeof(aircon_on[0]);
+      sendData(aircon_on, dataSize);
+    }
+      break;
+    case DRIVE_AUTO:{
+      dataSize = sizeof(drive_auto) / sizeof(drive_auto[0]);
+      sendData(drive_auto, dataSize);
+    }
+    case DRIVE_COOL:{
+      dataSize = sizeof(drive_cool) / sizeof(drive_cool[0]);
+      sendData(drive_cool, dataSize);
+    }
+    case DRIVE_DRY:{
+      dataSize = sizeof(drive_dry) / sizeof(drive_dry[0]);
+      sendData(drive_dry, dataSize);
+    }
+    case DRIVE_WARM:{
+      dataSize = sizeof(drive_warm) / sizeof(drive_warm[0]);
+      sendData(drive_warm, dataSize);
+    }
+    case WIND_AUTO:{
+      dataSize = sizeof(wind_auto) / sizeof(wind_auto[0]);
+      sendData(wind_auto, dataSize);
+    }
+    case WIND_LIGHT:{
+      dataSize = sizeof(wind_light) / sizeof(wind_light[0]);
+      sendData(wind_light, dataSize);
+    }
+    case WIND_STRONG:{
+      dataSize = sizeof(wind_strong) / sizeof(wind_strong[0]);
+      sendData(wind_strong, dataSize);
+    }
+    case WIND_HARD:{
+      dataSize = sizeof(wind_hard) / sizeof(wind_hard[0]);
+      sendData(wind_hard, dataSize);
+    }
+    case TEMP_16:{
+      dataSize = sizeof(temp_16) / sizeof(temp_16[0]);
+      sendData(temp_16, dataSize);
+    }
+    case TEMP_17:{
+      dataSize = sizeof(temp_17) / sizeof(temp_17[0]);
+      sendData(temp_17, dataSize);
+    }
+    case TEMP_18:{
+      dataSize = sizeof(temp_18) / sizeof(temp_18[0]);
+      sendData(temp_18, dataSize);
+    }
+    case TEMP_19:{
+      dataSize = sizeof(temp_19) / sizeof(temp_19[0]);
+      sendData(temp_19, dataSize);
+    }
+    case TEMP_20:{
+      dataSize = sizeof(temp_20) / sizeof(temp_20[0]);
+      sendData(temp_20, dataSize);
+    }
+    case TEMP_21:{
+      dataSize = sizeof(temp_21) / sizeof(temp_21[0]);
+      sendData(temp_21, dataSize);
+    }
+    case TEMP_22:{
+      dataSize = sizeof(temp_22) / sizeof(temp_22[0]);
+      sendData(temp_22, dataSize);
+    }
+    case TEMP_23:{
+      dataSize = sizeof(temp_23) / sizeof(temp_23[0]);
+      sendData(temp_23, dataSize);
+    }
+    case TEMP_24:{
+      dataSize = sizeof(temp_24) / sizeof(temp_24[0]);
+      sendData(temp_24, dataSize);
+    }
+    case TEMP_25:{
+      dataSize = sizeof(temp_25) / sizeof(temp_25[0]);
+      sendData(temp_25, dataSize);
+    }
+    case TEMP_26:{
+      dataSize = sizeof(temp_26) / sizeof(temp_26[0]);
+      sendData(temp_26, dataSize);
+    }
+    case TEMP_27:{
+      dataSize = sizeof(temp_27) / sizeof(temp_27[0]);
+      sendData(temp_27, dataSize);
+    }
+    case TEMP_28:{
+      dataSize = sizeof(temp_28) / sizeof(temp_28[0]);
+      sendData(temp_28, dataSize);
+    }
+    case TEMP_29:{
+      dataSize = sizeof(temp_29) / sizeof(temp_29[0]);
+      sendData(temp_29, dataSize);
+    }
+    case TEMP_30:{
+      dataSize = sizeof(temp_30) / sizeof(temp_30[0]);
+      sendData(temp_30, dataSize);
+    }
+    case TEMP_31:{
+      dataSize = sizeof(temp_31) / sizeof(temp_31[0]);
+      sendData(temp_31, dataSize);
+    }
+    case AUTO_FLAP:{
+      dataSize = sizeof(auto_flap) / sizeof(auto_flap[0]);
+      sendData(auto_flap, dataSize);
+    }
+      break;
+    default:{}
+      break;
+    }
+}
+
+void loop() {
 
   if(Serial.available() > 0){
     
@@ -139,117 +290,99 @@ void loop() {
     Serial.write(val);
     if(val == 'a'){
       digitalWrite(led, HIGH);
-      dataSize = sizeof(aircon_on) / sizeof(aircon_on[0]);
-      sendData(aircon_on, dataSize);
+      sendSignal(AIRCON_ON);
     }
     else if(val == 'b'){
       digitalWrite(led, LOW);
-      dataSize = sizeof(aircon_off) / sizeof(aircon_off[0]);
-      sendData(aircon_off, dataSize);
+      sendSignal(AIRCON_OFF);
     }
     else if(val == 'c'){
-      dataSize = sizeof(drive_auto) / sizeof(drive_auto[0]);
-      sendData(drive_auto, dataSize);
+      sendSignal(DRIVE_AUTO);
     }
     else if(val == 'd'){
-      dataSize = sizeof(drive_cool) / sizeof(drive_cool[0]);
-      sendData(drive_cool, dataSize);
+      sendSignal(DRIVE_COOL);
     }
     else if(val == 'e'){
-      dataSize = sizeof(drive_dry) / sizeof(drive_dry[0]);
-      sendData(drive_dry, dataSize);
+      sendSignal(DRIVE_DRY);
     }
     else if(val == 'f'){
-      dataSize = sizeof(drive_warm) / sizeof(drive_warm[0]);
-      sendData(drive_warm, dataSize);
+      sendSignal(DRIVE_WARM);
     }
     else if(val == 'g'){
-      dataSize = sizeof(wind_auto) / sizeof(wind_auto[0]);
-      sendData(wind_auto, dataSize);
+      sendSignal(WIND_AUTO);
     }
     else if(val == 'h'){
-     dataSize = sizeof(wind_light) / sizeof(wind_light[0]);
-      sendData(wind_light, dataSize);
+      sendSignal(WIND_LIGHT);
     }
     else if(val == 'i'){
-      dataSize = sizeof(wind_strong) / sizeof(wind_strong[0]);
-      sendData(wind_strong, dataSize);
+      sendSignal(WIND_STRONG);
     }
     else if(val == 'j'){
-      dataSize = sizeof(wind_hard) / sizeof(wind_hard[0]);
-      sendData(wind_hard, dataSize);
+      sendSignal(WIND_HARD);
     }
     else if(val == 'k'){
-      dataSize = sizeof(temp_16) / sizeof(temp_16[0]);
-      sendData(temp_16, dataSize);
+      sendSignal(TEMP_16);
     }
     else if(val == 'l'){
-      dataSize = sizeof(temp_17) / sizeof(temp_17[0]);
-      sendData(temp_17, dataSize);
+      sendSignal(TEMP_17);
     }
     else if(val == 'm'){
-      dataSize = sizeof(temp_18) / sizeof(temp_18[0]);
-      sendData(temp_18, dataSize);
+      sendSignal(TEMP_18);
     }
     else if(val == 'n'){
-      dataSize = sizeof(temp_19) / sizeof(temp_19[0]);
-      sendData(temp_19, dataSize);
+      sendSignal(TEMP_19);
     }
     else if(val == 'o'){
-      dataSize = sizeof(temp_20) / sizeof(temp_20[0]);
-      sendData(temp_20, dataSize);
+      sendSignal(TEMP_20);
     }
     else if(val == 'p'){
-      dataSize = sizeof(temp_21) / sizeof(temp_21[0]);
-      sendData(temp_21, dataSize);
+      sendSignal(TEMP_21);
     }
     else if(val == 'q'){
-      dataSize = sizeof(temp_22) / sizeof(temp_22[0]);
-      sendData(temp_22, dataSize);
+      sendSignal(TEMP_22);
     }
     else if(val == 'r'){
-      dataSize = sizeof(temp_23) / sizeof(temp_23[0]);
-      sendData(temp_23, dataSize);
+      sendSignal(TEMP_23);
     }
     else if(val == 's'){
-      dataSize = sizeof(temp_24) / sizeof(temp_24[0]);
-      sendData(temp_24, dataSize);
+      sendSignal(TEMP_24);
     }
     else if(val == 't'){
-      dataSize = sizeof(temp_25) / sizeof(temp_25[0]);
-      sendData(temp_25, dataSize);
+      sendSignal(TEMP_25);
     }
     else if(val == 'u'){
-      dataSize = sizeof(temp_26) / sizeof(temp_26[0]);
-      sendData(temp_26, dataSize);
+      sendSignal(TEMP_26);
     }
     else if(val == 'v'){
-      dataSize = sizeof(temp_27) / sizeof(temp_27[0]);
-      sendData(temp_27, dataSize);
+      sendSignal(TEMP_27);
     }
     else if(val == 'w'){
-      dataSize = sizeof(temp_28) / sizeof(temp_28[0]);
-      sendData(temp_28, dataSize);
+      sendSignal(TEMP_28);
     }
     else if(val == 'x'){
-      dataSize = sizeof(temp_29) / sizeof(temp_29[0]);
-      sendData(temp_29, dataSize);
+      sendSignal(TEMP_29);
     }
     else if(val == 'y'){
-      dataSize = sizeof(temp_30) / sizeof(temp_30[0]);
-      sendData(temp_30, dataSize);
+      sendSignal(TEMP_30);
     }
     else if(val == 'z'){
-      dataSize = sizeof(temp_31) / sizeof(temp_31[0]);
-      sendData(temp_31, dataSize);
+      sendSignal(TEMP_31);
     }
     else if(val == 'A'){
-      dataSize = sizeof(auto_flap) / sizeof(auto_flap[0]);
-      sendData(auto_flap, dataSize);
-    }
-    else{}
+      sendSignal(AUTO_FLAP);
+    }    
   }
 
+  
+//  if(isOn){
+//    sendSignal(AIRCON_OFF);
+//    isOn = false;
+//  }
+//  else{
+//    sendSignal(AIRCON_ON);
+//    isOn = true;
+//  }
+//  delay(3000);
 }
 
 

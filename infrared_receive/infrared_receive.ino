@@ -41,7 +41,7 @@ void loop() {
     }
      
     now = micros();
-   　　 Serial.print((now - lastStateChangedMicros) / 10, DEC);
+    Serial.print((now - lastStateChangedMicros) / 10, DEC);
     Serial.print(",");
     lastStateChangedMicros = now;
     if (state == HIGH_STATE) {
